@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=Acrimonious Reader
+GenericName=Document Viewer
+Comment=Read PDF documents, fill in forms and sign them
+Exec=acrimonious-reader %U
+Icon=io.github.boergens.AcrimoniousReader
+Terminal=false
+Categories=GNOME;GTK;Office;Viewer;
+MimeType=application/pdf;
+Keywords=pdf;document;viewer;reader;form;sign;annotate;
+StartupNotify=true

@@ -1,0 +1,28 @@
+.TH ACRIMONIOUS-READER 1 "October 2026" "acrimonious-reader 1.0.0" "User Commands"
+.SH NAME
+acrimonious-reader \- PDF viewer for GNOME that can fill in and sign forms
+.SH SYNOPSIS
+.B acrimonious-reader
+[\fIOPTION\fR...] [\fIFILE\fR...]
+.SH DESCRIPTION
+.B acrimonious-reader
+shows PDF documents. Each \fIFILE\fR (a path or a URI) opens in its own window; a file that is
+already open is brought to the front.
+.PP
+Pages are rendered on a background thread, so scrolling and zooming stay smooth. The viewer has
+page thumbnails, the document outline, search, links with back and forward, text selection,
+night mode and printing, and it reloads a document automatically when the file changes.
+.PP
+Press Ctrl+E to write and draw: add text boxes, draw freehand with the pen, and erase. Ctrl+S
+saves them into the PDF as standard annotations, so other PDF viewers show them too. Press Ctrl+?
+for all keyboard shortcuts.
+.SH OPTIONS
+.TP
+.BR \-h ", " \-\-help
+Show the GTK and application options.
+.SH FILES
+.TP
+.I $XDG_STATE_HOME/acrimonious-reader/state.json
+Where each document was left, and the window and display preferences.
+.SH SEE ALSO
+https://github.com/boergens/acrimonious-reader

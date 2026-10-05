@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	$(MAKE) install PREFIX=/usr DESTDIR=$(CURDIR)/debian/acrimonious-reader
+
+# The tests need the whole GTK stack; run them with `make test` instead.
+override_dh_auto_test:
+
+override_dh_python3:
+	dh_python3 /usr/share/acrimonious-reader

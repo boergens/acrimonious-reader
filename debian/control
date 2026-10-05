@@ -1,0 +1,34 @@
+Source: acrimonious-reader
+Section: graphics
+Priority: optional
+Maintainer: Kevin Boergens <kevin.boergens@gmail.com>
+Build-Depends: debhelper-compat (= 13), dh-sequence-python3, python3:any
+Standards-Version: 4.7.2
+Homepage: https://github.com/boergens/acrimonious-reader
+Vcs-Browser: https://github.com/boergens/acrimonious-reader
+Vcs-Git: https://github.com/boergens/acrimonious-reader.git
+Rules-Requires-Root: no
+
+Package: acrimonious-reader
+Architecture: all
+Depends: ${misc:Depends},
+         ${python3:Depends},
+         gir1.2-adw-1 (>= 1.7),
+         gir1.2-gtk-4.0 (>= 4.14),
+         gir1.2-pango-1.0,
+         gir1.2-poppler-0.18,
+         python3-cairo,
+         python3-gi,
+         python3-gi-cairo,
+         python3-pikepdf
+Recommends: fonts-liberation
+Description: fast PDF viewer for GNOME that can fill in and sign forms
+ Acrimonious Reader is a PDF viewer built with GTK 4 and libadwaita. Pages
+ render on a background thread with Poppler, so scrolling and zooming stay
+ smooth even in large documents.
+ .
+ It has page thumbnails, the document outline, search across the whole
+ document, links with back and forward, text selection, night mode, printing
+ and automatic reloading when the file changes. Text boxes and freehand
+ drawing are saved into the PDF as standard annotations, for filling in and
+ signing forms.

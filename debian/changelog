@@ -1,0 +1,5 @@
+acrimonious-reader (1.0.0) unstable; urgency=medium
+
+  * First release: a PDF viewer with text boxes and freehand drawing.
+
+ -- Kevin Boergens <kevin.boergens@gmail.com>  Mon, 05 Oct 2026 14:34:35 +0000
