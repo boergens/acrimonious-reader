@@ -1,0 +1,4 @@
+/dists/*
+  Cache-Control: no-cache
+/*.asc
+  Content-Type: text/plain; charset=utf-8

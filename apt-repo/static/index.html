@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acrimonious Reader apt repository</title>
+<style>
+  :root { color-scheme: light dark; --bg: #fafafa; --fg: #222; --dim: #666; --code: #ececec; --accent: #1c71d8; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1e1e1e; --fg: #eee; --dim: #aaa; --code: #2c2c2c; --accent: #78aeed; } }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.55 system-ui, sans-serif; }
+  main { max-width: 46rem; margin: 0 auto; padding: 2.5rem 16px 4rem; }
+  h1 { font-size: 1.7rem; margin: 0 0 .3rem; }
+  p.lead { color: var(--dim); margin-top: 0; }
+  pre { background: var(--code); padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: .85rem; line-height: 1.4; }
+  code { font-family: ui-monospace, monospace; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<main>
+<h1>Acrimonious Reader</h1>
+<p class="lead">apt repository for Debian 13 (trixie): a PDF viewer for GNOME that can fill in and sign forms.
+Source and releases: <a href="https://github.com/boergens/acrimonious-reader">github.com/boergens/acrimonious-reader</a>.</p>
+<h2>Install</h2>
+<p>Paste this into a terminal. It adds the repository, with its signing key built in, and installs the
+app. New versions then arrive with your normal updates.</p>
+<pre><code>sudo tee /etc/apt/sources.list.d/acrimonious-reader.sources &gt; /dev/null &lt;&lt;&#x27;END&#x27;
+Types: deb
+URIs: https://acrimonious-reader.pages.dev
+Suites: trixie
+Components: main
+Signed-By:
+ -----BEGIN PGP PUBLIC KEY BLOCK-----
+ .
+ mDMEasPO8xYJKwYBBAHaRw8BAQdA3UlUdFX7y4CBMtyhUqjNU+DO4vkN7aQ2idjD
+ 4XPA+Xm0UkFjcmltb25pb3VzIFJlYWRlciBhcHQgcmVwb3NpdG9yeSAoaHR0cHM6
+ Ly9naXRodWIuY29tL2JvZXJnZW5zL2Fjcmltb25pb3VzLXJlYWRlcimIkAQTFgoA
+ OBYhBHxopjwASOne4p4Edwfg3yfmu6wXBQJqw87zAhsDBQsJCAcCBhUKCQgLAgQW
+ AgMBAh4BAheAAAoJEAfg3yfmu6wXsRgBAITGjGFo7ds7YzRT4TtXzg3JS+poPw5x
+ sdT0v17DdeqyAQDHK+a0QBZpI0/WObkwVdWXcK87Uq+9FLaVMr8+YkOUDg==
+ =6kWC
+ -----END PGP PUBLIC KEY BLOCK-----
+END
+sudo apt update
+sudo apt install acrimonious-reader</code></pre>
+<p>Signing key fingerprint: <code>7C68 A63C 0048 E9DE E29E  0477 07E0 DF27 E6BB AC17</code> (<a href="acrimonious-reader.asc">acrimonious-reader.asc</a>).</p>
+<h2>Remove</h2>
+<pre><code>sudo apt remove acrimonious-reader
+sudo rm /etc/apt/sources.list.d/acrimonious-reader.sources</code></pre>
+</main>
+</body>
+</html>

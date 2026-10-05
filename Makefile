@@ -4,7 +4,10 @@ PREFIX ?= $(HOME)/.local
 APP_ID = io.github.boergens.AcrimoniousReader
 NAME = acrimonious-reader
 DATADIR = $(PREFIX)/share
-PKGDIR = $(DATADIR)/$(NAME)
+# The program's own files. Not $(DATADIR)/$(NAME): with PREFIX=~/.local that is the user's data
+# folder (~/.local/share/acrimonious-reader, where saved signatures live), which install and
+# uninstall must never touch.
+PKGDIR = $(PREFIX)/lib/$(NAME)
 DEST = $(DESTDIR)$(PREFIX)
 DESTDATA = $(DESTDIR)$(DATADIR)
 

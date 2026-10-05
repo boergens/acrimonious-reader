@@ -1,3 +1,11 @@
+acrimonious-reader (1.1.1) unstable; urgency=medium
+
+  * Install the program to /usr/lib/acrimonious-reader. With `make install`
+    into ~/.local the old place was the user's data folder, so reinstalling
+    or uninstalling deleted saved signatures.
+
+ -- Kevin Boergens <kevin.boergens@gmail.com>  Mon, 05 Oct 2026 16:22:25 +0000
+
 acrimonious-reader (1.1.0) unstable; urgency=medium
 
   * Saved signatures: draw a signature once on a signing pad, or save a

@@ -1,0 +1,8 @@
+Origin: Acrimonious Reader
+Label: Acrimonious Reader
+Suite: stable
+Codename: trixie
+Architectures: amd64 arm64 armhf ppc64el riscv64 s390x
+Components: main
+Description: Acrimonious Reader, a PDF viewer for GNOME
+SignWith: 7C68A63C0048E9DEE29E047707E0DF27E6BBAC17

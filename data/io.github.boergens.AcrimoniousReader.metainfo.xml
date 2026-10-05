@@ -36,6 +36,12 @@
   </provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="1.1.1" date="2026-10-05">
+      <description>
+        <p>Installing or uninstalling from source no longer touches saved signatures. Packages are
+        now also available from an apt repository.</p>
+      </description>
+    </release>
     <release version="1.1.0" date="2026-10-05">
       <description>
         <p>Saved signatures: draw your signature once and place it on any document with a click.

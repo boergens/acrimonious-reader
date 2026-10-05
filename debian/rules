@@ -10,4 +10,4 @@ override_dh_auto_install:
 override_dh_auto_test:
 
 override_dh_python3:
-	dh_python3 /usr/share/acrimonious-reader
+	dh_python3 /usr/lib/acrimonious-reader

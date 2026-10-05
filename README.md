@@ -7,15 +7,16 @@ Poppler.
 
 ## Install on Debian 13
 
-Download the `.deb` from the [latest release](https://github.com/boergens/acrimonious-reader/releases/latest),
-then:
+From the apt repository, so that updates arrive with your normal system updates: follow the
+instructions at **https://acrimonious-reader.pages.dev** (one block to paste into a terminal; it
+adds the repository, whose signing key is built into the source file, and installs the app).
+The key's fingerprint is `7C68 A63C 0048 E9DE E29E  0477 07E0 DF27 E6BB AC17`.
 
-```sh
-sudo apt install ./acrimonious-reader_*_all.deb
-```
+Or download the `.deb` from the [latest release](https://github.com/boergens/acrimonious-reader/releases/latest)
+and install it by hand: `sudo apt install ./acrimonious-reader_*_all.deb`.
 
-apt pulls in what it needs (GTK 4, libadwaita, Poppler, pikepdf). Acrimonious Reader then appears in
-the app grid and under "Open With" for PDFs, or run `acrimonious-reader file.pdf`.
+Acrimonious Reader then appears in the app grid and under "Open With" for PDFs, or run
+`acrimonious-reader file.pdf`.
 
 ## Features
 
@@ -96,6 +97,8 @@ pikepdf. The program marks its own annotations (`/NM acrimonious-…` plus its d
 
 Poppler isn't thread-safe, so every Poppler call holds `Document.lock`. In practice nearly all of
 them run on the session's worker thread, and the main thread only reads finished results.
+
+How the apt repository is built and published: [apt-repo/README.md](apt-repo/README.md).
 
 ## Tests
 
