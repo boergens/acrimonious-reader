@@ -83,6 +83,8 @@ class DocumentView(AnnotationTools, Gtk.Widget, Gtk.Scrollable):
         "toast": (GObject.SignalFlags.RUN_LAST, None, (str,)),
         # The annotation chosen (to move, delete or restyle) changed; the item, or None.
         "annotation-chosen": (GObject.SignalFlags.RUN_LAST, None, (object,)),
+        # "Save as Signature" was chosen for an ink annotation (the item).
+        "save-signature": (GObject.SignalFlags.RUN_LAST, None, (object,)),
     }
 
     hscroll_policy = GObject.Property(type=Gtk.ScrollablePolicy, default=Gtk.ScrollablePolicy.MINIMUM)
@@ -137,6 +139,9 @@ class DocumentView(AnnotationTools, Gtk.Widget, Gtk.Scrollable):
         delete = Gio.SimpleAction.new("delete-annotation", None)
         delete.connect("activate", lambda *_: self.delete_chosen())
         actions.add_action(delete)
+        save_signature = Gio.SimpleAction.new("save-signature", None)
+        save_signature.connect("activate", lambda *_: self.emit("save-signature", self.chosen_item()))
+        actions.add_action(save_signature)
         self.insert_action_group("view", actions)
 
     # Properties
@@ -212,6 +217,11 @@ class DocumentView(AnnotationTools, Gtk.Widget, Gtk.Scrollable):
         if self._editor is not None:
             self._apply_editor_style()
         self.queue_draw()
+
+    @GObject.Property(type=bool, default=False, flags=GObject.ParamFlags.READABLE)
+    def placing(self):
+        """Whether a saved signature is waiting for a click that puts it on a page."""
+        return self._placing is not None
 
     @GObject.Property(type=str, default="browse")
     def tool(self):
@@ -925,7 +935,7 @@ class DocumentView(AnnotationTools, Gtk.Widget, Gtk.Scrollable):
 
         motion = Gtk.EventControllerMotion()
         motion.connect("motion", self._on_motion)
-        motion.connect("leave", lambda *_: setattr(self, "_pointer", None))
+        motion.connect("leave", self._on_leave)
         self.add_controller(motion)
 
         scroll = Gtk.EventControllerScroll(flags=Gtk.EventControllerScrollFlags.BOTH_AXES)
@@ -948,10 +958,15 @@ class DocumentView(AnnotationTools, Gtk.Widget, Gtk.Scrollable):
             self._cursor = name
             self.set_cursor_from_name(name)
 
+    def _on_leave(self, controller):
+        self._pointer = None
+        self._annotation_leave()
+
     def _on_motion(self, controller, x, y):
         self._pointer = (x, y)
         if self.session is None:
             return
+        self._annotation_motion(x, y)
         cursor = self._annotation_cursor(x, y)
         if cursor is not False:
             self._set_cursor(cursor)
@@ -1145,6 +1160,8 @@ class DocumentView(AnnotationTools, Gtk.Widget, Gtk.Scrollable):
         if item is not None:
             self._choose(item.name)
             annotation = Gio.Menu()
+            if item.kind == "ink":
+                annotation.append("Save as _Signature", "view.save-signature")
             annotation.append("_Delete", "view.delete-annotation")
             menu.prepend_section(None, annotation)
         link = self._link_at(x, y)

@@ -20,6 +20,7 @@ TOOLS = ("browse", "text", "pen", "eraser")
 INK_GROUP_SECONDS = 4  # a stroke this soon after the previous one joins its annotation...
 INK_GROUP_DISTANCE = 60  # ...if it is also this close to it, in points
 HIT_PIXELS = 4  # how near the pointer must be to an annotation to grab it
+HANDLE_PIXELS = 10  # size of the resize handle on the chosen annotation
 NIGHT_HUE = ((-0.574, 1.430, 0.144), (0.426, 0.430, 0.144), (0.426, 1.430, -0.856))  # CSS hue-rotate(180°)
 NIGHT_STRENGTH = 0.88
 
@@ -52,6 +53,9 @@ class AnnotationTools:
         self._editor_tag = None
         self._editor_zoom = None
         self._annotations_handler = None
+        self._placing = None  # a saved Signature waiting for a click that puts it on a page
+        self._ghost = None  # (page, x, y) where it would land: drawn faintly under the pointer
+        self._resizing = None  # [item, ax, ay, widget ax, widget ay, widget x, widget y] while scaling
 
     @property
     def editable(self):
@@ -67,6 +71,8 @@ class AnnotationTools:
         if new is not None:
             self._annotations_handler = new.annotations.connect("changed", self._on_annotations_changed)
         self._chosen = self._moving = self._move_preview = self._stroke = self._last_ink = None
+        self._ghost = self._resizing = None
+        self._set_placing(None)
 
     def _on_annotations_changed(self, annotations):
         if self._chosen is not None and annotations.find(self._chosen) is None:
@@ -76,6 +82,7 @@ class AnnotationTools:
     def _set_tool(self, tool):
         if tool not in TOOLS or tool == self._tool:
             return
+        self.cancel_placing()
         self.commit_editing()
         self._tool = tool
         self._last_ink = None
@@ -117,6 +124,43 @@ class AnnotationTools:
             changed = item.restyled(color=color, size=size) if item.kind == "text" else item.restyled(color=color, width=width)
             if changed != item:
                 self.session.annotations.replace(changed)
+
+    # Placing saved signatures
+
+    def start_placing(self, signature):
+        """Let the next click on a page put a saved signature there (Escape cancels)."""
+        if not self.editable:
+            return
+        self.commit_editing(refocus=False)
+        self._choose(None)
+        if self._tool in ("pen", "eraser"):  # their drag handlers would draw or erase on that click
+            self.props.tool = "browse"
+        self._set_placing(signature)
+        self._ghost = self._page_at(*self._pointer) if self._pointer is not None else None
+        self._set_cursor("crosshair")
+        self.grab_focus()
+        self.queue_draw()
+
+    def cancel_placing(self):
+        if self._placing is not None:
+            self._ghost = None
+            self._set_placing(None)
+            self.queue_draw()
+
+    def _set_placing(self, signature):
+        if signature is not self._placing:
+            self._placing = signature
+            self.notify("placing")
+
+    def _annotation_motion(self, x, y):
+        if self._placing is not None:
+            self._ghost = self._page_at(x, y)
+            self.queue_draw()
+
+    def _annotation_leave(self):
+        if self._ghost is not None:
+            self._ghost = None
+            self.queue_draw()
 
     # Typing text boxes
 
@@ -239,7 +283,10 @@ class AnnotationTools:
 
     def _draw_annotations(self, snapshot, page, ox, oy, bounds):
         items = self._page_items(page)
-        if not items:
+        ghost = None
+        if self._placing is not None and self._ghost is not None and self._ghost[0] == page:
+            ghost = self._placing.place(*self._ghost)
+        if not items and ghost is None:
             return
         view_w, view_h = self._alloc
         x1, y1 = max(bounds.get_x(), 0), max(bounds.get_y(), 0)
@@ -253,6 +300,11 @@ class AnnotationTools:
         apply_rotation(cr, self._rotation, *self.session.document.page_sizes[page])
         for item in items:
             item.draw(cr)
+        if ghost is not None:
+            cr.push_group()
+            ghost.draw(cr)
+            cr.pop_group_to_source()
+            cr.paint_with_alpha(0.5)
 
     def _draw_chosen(self, snapshot, page, ox, oy):
         item = self._move_preview or self.chosen_item()
@@ -260,9 +312,27 @@ class AnnotationTools:
             return
         x, y, _, _ = self._layout[page]
         rx, ry, rw, rh = self._rect_in_content(page, item.bounds(), pad=2)
+        accent = _accent()
         outline = Gsk.RoundedRect()
         outline.init_from_rect(rect(rx + ox - x, ry + oy - y, rw, rh), 3)
-        snapshot.append_border(outline, [1.5] * 4, [_accent()] * 4)
+        snapshot.append_border(outline, [1.5] * 4, [accent] * 4)
+        # The resize handle on the bottom right corner.
+        size = HANDLE_PIXELS
+        square = rect(rx + ox - x + rw - size / 2, ry + oy - y + rh - size / 2, size, size)
+        handle = Gsk.RoundedRect()
+        handle.init_from_rect(square, 2)
+        snapshot.push_rounded_clip(handle)
+        snapshot.append_color(accent, square)
+        snapshot.pop()
+
+    def _handle_at(self, x, y):
+        """Whether widget point (x, y) is on the chosen annotation's resize handle."""
+        item = self.chosen_item()
+        if item is None or self._editor is not None:
+            return False
+        rx, ry, rw, rh = self._rect_in_content(item.page, item.bounds(), pad=2)
+        hx, hy = rx + rw - self._hadj.get_value(), ry + rh - self._vadj.get_value()
+        return abs(x - hx) <= HANDLE_PIXELS and abs(y - hy) <= HANDLE_PIXELS
 
     # Pointer and keys. Each handler returns True when the annotation tools took the event.
 
@@ -290,8 +360,12 @@ class AnnotationTools:
         """The cursor the tools want at (x, y), or False to leave it to browsing."""
         if not self.editable:
             return False
+        if self._placing is not None:
+            return "crosshair"
         if self._tool in ("pen", "eraser"):
             return "crosshair" if self._tool == "pen" else "cell"
+        if self._handle_at(x, y):
+            return "nwse-resize"
         item, hit = self._item_at(x, y)
         if item is not None:
             return "move"
@@ -307,8 +381,23 @@ class AnnotationTools:
             self.commit_editing()
         if not self.editable:
             return False
+        if self._placing is not None:
+            hit = self._page_at(x, y)
+            if hit is not None:
+                ink = self._placing.place(*hit)
+                self._ghost = None
+                self._set_placing(None)
+                self.session.annotations.add(ink)
+                self._choose(ink.name)
+            return True
         if self._tool in ("pen", "eraser"):
             return True  # the drag handlers draw and erase
+        if self._handle_at(x, y):
+            item = self.chosen_item()
+            rx, ry, _, _ = self._rect_in_content(item.page, item.bounds(), pad=2)
+            wax, way = rx - self._hadj.get_value(), ry - self._vadj.get_value()  # the opposite corner
+            self._resizing = [item, *self._to_page(item.page, wax, way), wax, way, x, y]
+            return True
         item, hit = self._item_at(x, y)
         if item is not None:
             self._choose(item.name)
@@ -351,7 +440,7 @@ class AnnotationTools:
 
     def _annotation_drag_update(self, x, y):
         if self._tool == "pen":
-            # GTK delivers about one position per frame; the curves in _stroke_path smooth between them.
+            # GTK delivers about one position per frame; the curves in stroke_path smooth between them.
             if self._stroke is not None:
                 page, points = self._stroke
                 px, py = self._to_page(page, x, y)
@@ -362,6 +451,13 @@ class AnnotationTools:
             return True
         if self._tool == "eraser":
             self._erase_at(x, y)
+            return True
+        if self._resizing is not None:
+            item, ax, ay, wax, way, sx, sy = self._resizing
+            start = (sx - wax) + (sy - way)
+            factor = max(((x - wax) + (y - way)) / start, 0.1) if start > 0 else 1.0
+            self._move_preview = item.scaled(factor, ax, ay)
+            self.queue_draw()
             return True
         if self._moving is not None:
             item, page, sx, sy = self._moving
@@ -377,11 +473,12 @@ class AnnotationTools:
             return True
         if self._tool == "eraser":
             return True
+        resizing, self._resizing = self._resizing, None
         if self._move_preview is not None:
             preview, self._move_preview, self._moving = self._move_preview, None, None
             self.session.annotations.replace(preview)
             return True
-        return self._moving is not None
+        return self._moving is not None or resizing is not None
 
     def _finish_stroke(self):
         page, points = self._stroke
@@ -424,6 +521,9 @@ class AnnotationTools:
             model.apply(items)
 
     def _annotation_key(self, keyval, state):
+        if self._placing is not None and keyval == Gdk.KEY_Escape:
+            self.cancel_placing()
+            return True
         if self._editor is not None or not self.editable:
             return False
         model = self.session.annotations

@@ -3,7 +3,7 @@
 import threading
 from pathlib import Path
 
-from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk
+from gi.repository import Adw, Gdk, Gio, GLib, GObject, Gtk, Pango
 
 from . import APP_ID, APP_NAME
 from . import document as documents
@@ -12,6 +12,7 @@ from .dialogs import ask_password, properties_dialog
 from .printing import print_document
 from .search import Search
 from .session import Session
+from .signatures import Signature, SignaturePad, SignaturePreview
 from .sidebar import Sidebar
 from .view import DocumentView
 
@@ -137,6 +138,7 @@ class Window(Adw.ApplicationWindow):
         self.edit_bar = self._build_edit_bar()
         self.toolbar.add_bottom_bar(self.edit_bar)
         self.view.connect("annotation-chosen", lambda *_: self._sync_style_controls())
+        self.view.connect("save-signature", self._on_save_signature)
         self.view.connect("notify::tool", lambda *_: self._sync_style_controls())
 
         self.sidebar = Sidebar()
@@ -294,9 +296,21 @@ class Window(Adw.ApplicationWindow):
         self.width_dropdown.set_tooltip_text("Pen Width")
         self.width_dropdown.connect("notify::selected", self._on_width_set)
 
+        self.signature_popover = Gtk.Popover(position=Gtk.PositionType.TOP)  # the bar is at the bottom
+        self.signature_popover.connect("show", lambda *_: self._fill_signatures())
+        signatures = Gtk.MenuButton(icon_name="acrimonious-reader-signature-symbolic", tooltip_text="Signatures",
+                                    popover=self.signature_popover)
+
         bar = Gtk.ActionBar(revealed=False)
-        for widget in (tools, self.color_button, self.size_box, self.width_dropdown):
+        for widget in (tools, self.color_button, self.size_box, self.width_dropdown, signatures):
             bar.pack_start(widget)
+        # While a signature is being placed (not a toast: that would cover the bottom of the page,
+        # where signature lines usually are).
+        hint = Gtk.Label(label="Click where the signature goes · Esc cancels", visible=False,
+                         ellipsize=Pango.EllipsizeMode.END)
+        hint.add_css_class("dim-label")
+        self.view.bind_property("placing", hint, "visible", GObject.BindingFlags.SYNC_CREATE)
+        bar.set_center_widget(hint)
         save = Gtk.Button(label="_Save", use_underline=True, action_name="win.save")
         save.add_css_class("suggested-action")
         bar.pack_end(save)
@@ -581,6 +595,60 @@ class Window(Adw.ApplicationWindow):
                        lambda message: self.toast(f"Printing failed: {message}"))
 
     # Writing and drawing
+
+    def _fill_signatures(self):
+        """The signature button's popover: saved signatures to place, and a way to add one."""
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6, margin_top=6, margin_bottom=6,
+                      margin_start=6, margin_end=6)
+        store = self.get_application().signatures
+        if store.signatures:
+            title = Gtk.Label(label="Click one, then click where it goes", xalign=0, margin_bottom=2)
+            title.add_css_class("dim-label")
+            title.add_css_class("caption")
+            box.append(title)
+        for signature in store.signatures:
+            place = Gtk.Button(child=SignaturePreview(signature), tooltip_text="Place This Signature")
+            place.connect("clicked", lambda _, signature=signature: self._place_signature(signature))
+            delete = Gtk.Button(icon_name="user-trash-symbolic", tooltip_text="Delete This Signature",
+                                valign=Gtk.Align.CENTER)
+            delete.add_css_class("flat")
+            delete.connect("clicked", lambda _, signature=signature: self._delete_signature(signature))
+            row = Gtk.Box(spacing=6)
+            row.append(place)
+            row.append(delete)
+            box.append(row)
+        new = Gtk.Button(label="_Draw New Signature…", use_underline=True)
+        new.add_css_class("flat")
+        new.connect("clicked", lambda *_: self._draw_signature())
+        box.append(new)
+        self.signature_popover.set_child(box)
+
+    def _place_signature(self, signature):
+        self.signature_popover.popdown()
+        self.view.start_placing(signature)
+
+    def _delete_signature(self, signature):
+        store = self.get_application().signatures
+        store.remove(signature.name)
+        self._fill_signatures()
+        toast = Adw.Toast(title="Signature deleted", button_label="_Undo")
+        toast.connect("button-clicked", lambda _: store.add(signature))
+        self.toasts.add_toast(toast)
+
+    def _draw_signature(self):
+        self.signature_popover.popdown()
+        pad = SignaturePad(self.view.style["color"], self.view.style["width"])
+        pad.connect("saved", self._on_signature_drawn)
+        pad.present(self)
+
+    def _on_signature_drawn(self, pad, signature):
+        self.get_application().signatures.add(signature)
+        self._place_signature(signature)
+
+    def _on_save_signature(self, view, item):
+        if item is not None and item.kind == "ink":
+            self.get_application().signatures.add(Signature.from_ink(item))
+            self.toast("Saved as a signature: place it again from the signature button")
 
     def _on_annotate(self, action, value):
         action.set_state(value)

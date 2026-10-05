@@ -43,6 +43,7 @@ SHORTCUTS = (
         (None, ("Left", "<Shift>Left"), "Nudge it by 1 or 10 points (all arrow keys)"),
         (None, ("Return",), "Edit the chosen text box"),
         (None, ("Escape", "<Control>Return"), "Finish typing"),
+        (None, ("Escape",), "Cancel placing a signature"),
     )),
     ("Search and Selection", (
         ("win.find", ("<Control>f",), "Find"),

@@ -7,11 +7,11 @@ Poppler.
 
 ## Install on Debian 13
 
-Download `acrimonious-reader_1.0.0_all.deb` from the
-[latest release](https://github.com/boergens/acrimonious-reader/releases/latest), then:
+Download the `.deb` from the [latest release](https://github.com/boergens/acrimonious-reader/releases/latest),
+then:
 
 ```sh
-sudo apt install ./acrimonious-reader_1.0.0_all.deb
+sudo apt install ./acrimonious-reader_*_all.deb
 ```
 
 apt pulls in what it needs (GTK 4, libadwaita, Poppler, pikepdf). Acrimonious Reader then appears in
@@ -40,6 +40,11 @@ the app grid and under "Open With" for PDFs, or run `acrimonious-reader file.pdf
   keys; change their colour, text size or pen width; delete and undo. Ctrl+S saves them into the
   PDF as standard annotations (FreeText and Ink) that look the same in other PDF viewers, and they
   stay editable when you open the file here again. You are asked before unsaved changes are lost.
+- **Saved signatures.** Draw your signature once on the signing pad (the signature button in the
+  writing toolbar), or right-click a drawing on a page and choose "Save as Signature". After that,
+  pick it from the signature button and click where it goes. Drag the corner handle to resize it.
+  Signatures are stored as strokes in `~/.local/share/acrimonious-reader/signatures.json`, readable
+  only by you.
 - **Auto-reload.** When the file changes on disk, e.g. after a LaTeX rebuild, the document reloads
   in place. It keeps your position, and the old rendering stays visible until the new one is ready.
 - **Remembers** the page, zoom and layout of every document, plus window size, sidebar and night mode.
@@ -64,7 +69,7 @@ make uninstall
 To build the Debian package yourself (`sudo apt install debhelper dh-python` first):
 
 ```sh
-dpkg-buildpackage -us -uc -b        # writes ../acrimonious-reader_1.0.0_all.deb
+dpkg-buildpackage -us -uc -b        # writes ../acrimonious-reader_<version>_all.deb
 ```
 
 ## Code
@@ -80,6 +85,7 @@ dpkg-buildpackage -us -uc -b        # writes ../acrimonious-reader_1.0.0_all.deb
 | `acrimonious_reader/annotations.py` | Text boxes and ink: the model with undo, drawing, hit testing |
 | `acrimonious_reader/editing.py` | The writing and drawing tools of the page view (a mixin of `DocumentView`) |
 | `acrimonious_reader/pdfwrite.py` | Saving annotations into the PDF with pikepdf, and reading them back |
+| `acrimonious_reader/signatures.py` | Saved signatures: the signing pad and the store between sessions |
 | `acrimonious_reader/window.py` | The main window: header bar, search bar, actions, loading and saving |
 | `application.py`, `shortcuts.py`, `dialogs.py`, `printing.py`, `state.py` | The rest |
 

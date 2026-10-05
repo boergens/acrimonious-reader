@@ -5,6 +5,7 @@ from pathlib import Path
 from gi.repository import Adw, Gdk, Gio, GLib, Gtk
 
 from . import APP_ID, APP_NAME, VERSION, WEBSITE, shortcuts
+from .signatures import SignatureStore
 from .state import StateStore
 from .window import Window
 
@@ -16,6 +17,7 @@ class Application(Adw.Application):
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.HANDLES_OPEN)
         GLib.set_application_name(APP_NAME)
         self.state = StateStore()
+        self.signatures = SignatureStore()
 
     def do_startup(self):
         Adw.Application.do_startup(self)

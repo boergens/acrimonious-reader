@@ -13,5 +13,5 @@ gi.require_version("PangoCairo", "1.0")
 
 APP_ID = "io.github.boergens.AcrimoniousReader"
 APP_NAME = "Acrimonious Reader"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 WEBSITE = "https://github.com/boergens/acrimonious-reader"

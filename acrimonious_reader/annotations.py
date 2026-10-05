@@ -68,7 +68,7 @@ def _stroke_distance(stroke, x, y):
     return min(_segment_distance(x, y, *a, *b) for a, b in zip(stroke, stroke[1:]))
 
 
-def _stroke_path(cr, points):
+def stroke_path(cr, points):
     """A smooth curve through pointer samples: quadratic segments between their midpoints."""
     cr.move_to(*points[0])
     if len(points) == 1:
@@ -115,6 +115,11 @@ class TextBox:
     def restyled(self, color=None, size=None):
         return replace(self, color=color or self.color, size=size or self.size)
 
+    def scaled(self, factor, ax, ay):
+        """Grown or shrunk around the point (ax, ay): the text size scales with it."""
+        return replace(self, x=ax + (self.x - ax) * factor, y=ay + (self.y - ay) * factor,
+                       size=max(self.size * factor, 2.0))
+
 
 @dataclass(frozen=True)
 class Ink:
@@ -139,7 +144,7 @@ class Ink:
         cr.set_line_cap(cairo.LINE_CAP_ROUND)
         cr.set_line_join(cairo.LINE_JOIN_ROUND)
         for stroke in self.strokes:
-            _stroke_path(cr, stroke)
+            stroke_path(cr, stroke)
             cr.stroke()
         cr.restore()
 
@@ -158,6 +163,12 @@ class Ink:
 
     def restyled(self, color=None, width=None):
         return replace(self, color=color or self.color, width=width or self.width)
+
+    def scaled(self, factor, ax, ay):
+        """Grown or shrunk around the point (ax, ay), line width included."""
+        strokes = tuple(tuple((ax + (x - ax) * factor, ay + (y - ay) * factor) for x, y in stroke)
+                        for stroke in self.strokes)
+        return replace(self, strokes=strokes, width=max(self.width * factor, 0.2))
 
 
 def item_to_json(item):

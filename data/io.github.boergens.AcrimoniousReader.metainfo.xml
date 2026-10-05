@@ -17,6 +17,7 @@
       <li>Zoom to fit, pinch and Ctrl+scroll zoom, dual pages, rotation and night mode</li>
       <li>Thumbnails, the document outline, and search across the whole document</li>
       <li>Text boxes and freehand drawing, saved as standard PDF annotations, for filling in and signing forms</li>
+      <li>Saved signatures: draw yours once, then place it on any document with a click</li>
       <li>Links with back and forward, text selection and copying, printing</li>
       <li>Reloads automatically when the file changes, and remembers where you were in every document</li>
     </ul>
@@ -35,6 +36,12 @@
   </provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="1.1.0" date="2026-10-05">
+      <description>
+        <p>Saved signatures: draw your signature once and place it on any document with a click.
+        Annotations can now be resized with a handle.</p>
+      </description>
+    </release>
     <release version="1.0.0" date="2026-10-05"/>
   </releases>
 </component>

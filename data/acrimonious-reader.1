@@ -1,4 +1,4 @@
-.TH ACRIMONIOUS-READER 1 "October 2026" "acrimonious-reader 1.0.0" "User Commands"
+.TH ACRIMONIOUS-READER 1 "October 2026" "acrimonious-reader 1.1.0" "User Commands"
 .SH NAME
 acrimonious-reader \- PDF viewer for GNOME that can fill in and sign forms
 .SH SYNOPSIS
@@ -16,6 +16,9 @@ night mode and printing, and it reloads a document automatically when the file c
 Press Ctrl+E to write and draw: add text boxes, draw freehand with the pen, and erase. Ctrl+S
 saves them into the PDF as standard annotations, so other PDF viewers show them too. Press Ctrl+?
 for all keyboard shortcuts.
+.PP
+The signature button keeps signatures you draw once, so you can place them on any document with a
+click. Right-clicking a drawing on a page offers to save it as a signature.
 .SH OPTIONS
 .TP
 .BR \-h ", " \-\-help
@@ -24,5 +27,8 @@ Show the GTK and application options.
 .TP
 .I $XDG_STATE_HOME/acrimonious-reader/state.json
 Where each document was left, and the window and display preferences.
+.TP
+.I $XDG_DATA_HOME/acrimonious-reader/signatures.json
+Saved signatures, readable only by you.
 .SH SEE ALSO
 https://github.com/boergens/acrimonious-reader
