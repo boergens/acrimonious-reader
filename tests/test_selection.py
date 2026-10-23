@@ -50,3 +50,16 @@ def test_selection_emptiness():
     assert Selection((0, 3), (0, 3)).is_empty
     assert not Selection((0, 3), (0, 3), "word").is_empty
     assert Selection((0, 3), (0, 3)).with_focus((1, 0)).focus == (1, 0)
+
+
+def test_form_lines_are_standalone_underscore_runs():
+    from acrimonious_reader.selection import find_form_lines
+
+    text = "Name: ____\n__init__ a__b _ x __"
+    rects = [(10 * i, 100 if i < 10 else 130, 10 * i + 10, 112 if i < 10 else 142) for i in range(len(text))]
+    lines = find_form_lines(text, rects, [(0, 9, 9.96), (10, len(text) - 1, 7.0)])
+    assert [(line.start, line.end) for line in lines] == [(6, 10), (len(text) - 2, len(text))]
+    assert lines[0].size == 10.0 and lines[1].size == 7.0  # rounded to half points
+    assert (lines[0].x1, lines[0].y1, lines[0].x2, lines[0].y2) == (60, 100, 100, 112)
+    (estimated,) = find_form_lines("____", [(0, 0, 5, 11), (5, 0, 10, 11), (10, 0, 15, 11), (15, 0, 20, 11)])
+    assert estimated.size == 10.0  # no attributes: estimated from the line box height

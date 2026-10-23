@@ -4,9 +4,45 @@ Positions in the text are cursor indices: 0 is before the first character, len(t
 All coordinates are page points with the origin at the top left of the unrotated page.
 """
 
+import re
 from dataclasses import dataclass
 
 END = 1 << 62  # a cursor index past the end of any page's text
+MIN_FORM_SIZE, MAX_FORM_SIZE = 4.0, 72.0
+
+
+@dataclass(frozen=True)
+class FormLine:
+    """A run of underscores meant to be written on, as in 'Name: ________'."""
+
+    x1: float
+    y1: float
+    x2: float
+    y2: float
+    size: float  # the underscores' font size in points, so that writing can match it
+    start: int  # cursor indices of the run
+    end: int
+
+
+def find_form_lines(text, rects, attributes=()):
+    """The form lines in a page's text: two or more underscores standing on their own, so that
+    the ones inside words like `__init__` do not count. `attributes` gives Poppler's font sizes as
+    (first index, last index, size) runs; without them the size is estimated from the line height."""
+    lines = []
+    for match in re.finditer(r"_{2,}", text):
+        start, end = match.span()
+        if (start > 0 and text[start - 1].isalnum()) or (end < len(text) and text[end].isalnum()):
+            continue
+        box = rects[start:end]
+        if len(box) < end - start:
+            continue
+        y1, y2 = min(r[1] for r in box), max(r[3] for r in box)
+        size = next((size for first, last, size in attributes if first <= start <= last), None)
+        if size is None:
+            size = (y2 - y1) * 0.9  # the line box is about 1.1 font sizes tall in common fonts
+        size = min(max(round(size * 2) / 2, MIN_FORM_SIZE), MAX_FORM_SIZE)
+        lines.append(FormLine(min(r[0] for r in box), y1, max(r[2] for r in box), y2, size, start, end))
+    return lines
 
 
 def _is_word(ch):
@@ -16,10 +52,11 @@ def _is_word(ch):
 class PageText:
     """The text of one page with the rectangle of every character."""
 
-    def __init__(self, text, rects):
+    def __init__(self, text, rects, attributes=()):
         n = min(len(text), len(rects))
         self.text = text[:n]
         self.rects = rects[:n]
+        self.form_lines = find_form_lines(self.text, self.rects, attributes)
         self.lines = []  # (x1, y1, x2, y2, start, end) with end exclusive
         start = 0
         for i in range(n + 1):

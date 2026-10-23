@@ -6,6 +6,9 @@ A mixin for DocumentView. The tools are:
 - "pen": draw freehand. Strokes made in quick succession join one ink annotation, so that a
   signature moves and deletes as one piece;
 - "eraser": wipe over strokes or text boxes to remove them.
+
+While the writing toolbar is shown, form lines (runs of underscores such as "Name: ______") get a
+green marker; clicking one starts a text box on the line, in the underscores' font size.
 """
 
 import math
@@ -21,8 +24,20 @@ INK_GROUP_SECONDS = 4  # a stroke this soon after the previous one joins its ann
 INK_GROUP_DISTANCE = 60  # ...if it is also this close to it, in points
 HIT_PIXELS = 4  # how near the pointer must be to an annotation to grab it
 HANDLE_PIXELS = 10  # size of the resize handle on the chosen annotation
+FORM_TEXT_COLOR = (0.0, 0.39, 0.0)  # dark green: writing on form lines stands out from the print
+FORM_LINE_INSET = 2.0  # points between the start of a form line and the text written on it
 NIGHT_HUE = ((-0.574, 1.430, 0.144), (0.426, 0.430, 0.144), (0.426, 1.430, -0.856))  # CSS hue-rotate(180°)
 NIGHT_STRENGTH = 0.88
+
+
+def _rgba(r, g, b, a):
+    color = Gdk.RGBA()
+    color.red, color.green, color.blue, color.alpha = r, g, b, a
+    return color
+
+
+FORM_LINE = _rgba(0.18, 0.63, 0.26, 0.28)
+FORM_LINE_HOVER = _rgba(0.18, 0.63, 0.26, 0.5)
 
 
 def rect(x, y, w, h):
@@ -56,6 +71,8 @@ class AnnotationTools:
         self._placing = None  # a saved Signature waiting for a click that puts it on a page
         self._ghost = None  # (page, x, y) where it would land: drawn faintly under the pointer
         self._resizing = None  # [item, ax, ay, widget ax, widget ay, widget x, widget y] while scaling
+        self._form_hints = False  # whether form lines get their markers (the writing toolbar is shown)
+        self._hover_line = None  # (page, FormLine) under the pointer
 
     @property
     def editable(self):
@@ -71,7 +88,7 @@ class AnnotationTools:
         if new is not None:
             self._annotations_handler = new.annotations.connect("changed", self._on_annotations_changed)
         self._chosen = self._moving = self._move_preview = self._stroke = self._last_ink = None
-        self._ghost = self._resizing = None
+        self._ghost = self._resizing = self._hover_line = None
         self._set_placing(None)
 
     def _on_annotations_changed(self, annotations):
@@ -86,9 +103,11 @@ class AnnotationTools:
         self.commit_editing()
         self._tool = tool
         self._last_ink = None
+        self._hover_line = None
         if tool in ("pen", "eraser"):
             self._choose(None)
         self.notify("tool")
+        self.queue_draw()
 
     # The chosen annotation
 
@@ -156,11 +175,63 @@ class AnnotationTools:
         if self._placing is not None:
             self._ghost = self._page_at(x, y)
             self.queue_draw()
+        hover = self._form_line_at(x, y) if self._placing is None else None
+        if hover != self._hover_line:
+            self._hover_line = hover
+            self.queue_draw()
 
     def _annotation_leave(self):
-        if self._ghost is not None:
-            self._ghost = None
+        if self._ghost is not None or self._hover_line is not None:
+            self._ghost = self._hover_line = None
             self.queue_draw()
+
+    # Form lines
+
+    def _set_form_hints(self, shown):
+        if shown != self._form_hints:
+            self._form_hints = shown
+            self._hover_line = None
+            self.notify("form-hints")
+            self.queue_draw()
+
+    def _visible_form_lines(self, page):
+        """The form lines on a page that still offer a text box: not the ones already written on."""
+        if not (self._form_hints and self.editable and self._tool in ("browse", "text")):
+            return ()
+        text = self.session.text(page)
+        if text is None or not text.form_lines:
+            return ()
+        covered = [item.bounds() for item in self.session.annotations.on_page(page) if item.kind == "text"]
+        if self._editing is not None and self._editing[0].page == page:
+            covered.append(self._editing[0].bounds())
+        return [line for line in text.form_lines
+                if not any(b[0] < line.x2 and b[2] > line.x1 and b[1] < line.y2 and b[3] > line.y1
+                           for b in covered)]
+
+    def _form_line_at(self, x, y):
+        """(page, FormLine) under widget point (x, y), or None."""
+        hit = self._page_at(x, y)
+        if hit is None:
+            return None
+        page, px, py = hit
+        for line in self._visible_form_lines(page):
+            if line.x1 <= px <= line.x2 and line.y1 - 1 <= py <= line.y2 + 1:
+                return page, line
+        return None
+
+    def _draw_form_lines(self, snapshot, page, ox, oy):
+        lines = self._visible_form_lines(page)
+        if not lines:
+            return
+        x, y, _, _ = self._layout[page]
+        for line in lines:
+            rx, ry, rw, rh = self._rect_in_content(page, (line.x1, line.y1, line.x2, line.y2), pad=1)
+            bounds = rect(rx + ox - x, ry + oy - y, rw, rh)
+            marker = Gsk.RoundedRect()
+            marker.init_from_rect(bounds, 3)
+            snapshot.push_rounded_clip(marker)
+            snapshot.append_color(FORM_LINE_HOVER if self._hover_line == (page, line) else FORM_LINE, bounds)
+            snapshot.pop()
 
     # Typing text boxes
 
@@ -369,6 +440,8 @@ class AnnotationTools:
         item, hit = self._item_at(x, y)
         if item is not None:
             return "move"
+        if self._form_line_at(x, y) is not None:
+            return "text"
         if self._tool == "text":
             return "text" if hit is not None else None
         return False
@@ -407,6 +480,13 @@ class AnnotationTools:
                 self._moving = [item, item.page, hit[1], hit[2]]
             return True
         self._choose(None)
+        form_line = self._form_line_at(x, y)
+        if form_line is not None:
+            page, line = form_line
+            self._hover_line = None
+            self.start_editing(TextBox(page, line.x1 + FORM_LINE_INSET, line.y1, "", line.size, FORM_TEXT_COLOR),
+                               new=True)
+            return True
         if self._tool == "text" and hit is not None:
             page, px, py = hit
             size = self.style["size"]

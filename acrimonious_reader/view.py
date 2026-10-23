@@ -223,6 +223,15 @@ class DocumentView(AnnotationTools, Gtk.Widget, Gtk.Scrollable):
         """Whether a saved signature is waiting for a click that puts it on a page."""
         return self._placing is not None
 
+    @GObject.Property(type=bool, default=False)
+    def form_hints(self):
+        """Whether form lines (runs of underscores) show a marker that starts a text box."""
+        return self._form_hints
+
+    @form_hints.setter
+    def form_hints(self, value):
+        self._set_form_hints(value)
+
     @GObject.Property(type=str, default="browse")
     def tool(self):
         """One of editing.TOOLS: "browse", "text", "pen" or "eraser"."""
@@ -776,6 +785,7 @@ class DocumentView(AnnotationTools, Gtk.Widget, Gtk.Scrollable):
             snapshot.pop()
         snapshot.pop()
         self._draw_highlights(snapshot, page, ox, oy, accent)
+        self._draw_form_lines(snapshot, page, ox, oy)
         self._draw_chosen(snapshot, page, ox, oy)
 
     def _draw_stand_in(self, snapshot, page, origin, s, scale):

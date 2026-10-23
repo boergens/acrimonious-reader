@@ -41,6 +41,9 @@ Acrimonious Reader then appears in the app grid and under "Open With" for PDFs, 
   keys; change their colour, text size or pen width; delete and undo. Ctrl+S saves them into the
   PDF as standard annotations (FreeText and Ink) that look the same in other PDF viewers, and they
   stay editable when you open the file here again. You are asked before unsaved changes are lost.
+- **Form lines.** While the writing toolbar is shown, every run of underscores such as
+  `Name: ________` gets a green marker. Click it to start a text box right on the line, in the
+  form's own font size and in dark green; the marker goes away once the line is written on.
 - **Saved signatures.** Draw your signature once on the signing pad (the signature button in the
   writing toolbar), or right-click a drawing on a page and choose "Save as Signature". After that,
   pick it from the signature button and click where it goes. Drag the corner handle to resize it.

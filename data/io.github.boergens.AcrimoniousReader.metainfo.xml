@@ -18,6 +18,7 @@
       <li>Thumbnails, the document outline, and search across the whole document</li>
       <li>Text boxes and freehand drawing, saved as standard PDF annotations, for filling in and signing forms</li>
       <li>Saved signatures: draw yours once, then place it on any document with a click</li>
+      <li>Form lines are marked; one click starts writing on them in the form's own font size</li>
       <li>Links with back and forward, text selection and copying, printing</li>
       <li>Reloads automatically when the file changes, and remembers where you were in every document</li>
     </ul>
@@ -36,6 +37,12 @@
   </provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="1.2.0" date="2026-10-23">
+      <description>
+        <p>Form lines (runs of underscores) get a green marker while the writing toolbar is shown;
+        clicking one starts a text box on the line in the form's own font size, in dark green.</p>
+      </description>
+    </release>
     <release version="1.1.1" date="2026-10-05">
       <description>
         <p>Installing or uninstalling from source no longer touches saved signatures. Packages are

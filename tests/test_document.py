@@ -16,7 +16,7 @@ def doc(sample_pdf):
 
 
 def test_basic_facts(doc):
-    assert doc.n_pages == 7
+    assert doc.n_pages == 8
     assert doc.title == "Acrimonious Reader Sample Document"
     assert doc.page_labels[:3] == ["1", "2", "3"]
     assert not doc.has_page_labels
@@ -55,6 +55,15 @@ def test_find_and_text(doc):
     assert len(text.text) == len(text.rects)
 
 
+def test_form_lines_come_with_their_font_size(doc):
+    lines = doc.text(7).form_lines
+    assert [line.size for line in lines] == [12.0, 12.0]
+    name, date = lines
+    assert name.x1 > 72 + 30 and name.x2 - name.x1 > 150  # after "Name: ", a long run
+    assert name.y1 < 120 < name.y2 and date.y1 < 150 < date.y2  # around their baselines
+    assert doc.text(7).text[name.start:name.end] == "_" * 40
+
+
 def test_render(doc):
     texture = doc.render(Tile(3, 90, 1.5, 0, 0, 300, 200))
     assert (texture.get_width(), texture.get_height()) == (300, 200)
@@ -70,7 +79,7 @@ def test_password(locked_pdf):
     with pytest.raises(GLib.Error) as info:
         document.load(gfile, "wrong")
     assert document.needs_password(info.value)
-    assert document.load(gfile, "secret").n_pages == 7
+    assert document.load(gfile, "secret").n_pages == 8
 
 
 def test_not_a_pdf(tmp_path):

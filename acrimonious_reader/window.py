@@ -654,6 +654,7 @@ class Window(Adw.ApplicationWindow):
         action.set_state(value)
         on = value.get_boolean()
         self.edit_bar.set_revealed(on)
+        self.view.props.form_hints = on
         if on and self.view.props.tool == "browse":
             self.view.props.tool = "text"
         elif not on:

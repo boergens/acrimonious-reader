@@ -229,7 +229,8 @@ class Document:
             ppage = self._pdoc.get_page(page)
             text = ppage.get_text() or ""
             ok, rects = ppage.get_text_layout()
-        return PageText(text, [(r.x1, r.y1, r.x2, r.y2) for r in rects] if ok else [])
+            attributes = [(a.start_index, a.end_index, a.font_size) for a in ppage.get_text_attributes()]
+        return PageText(text, [(r.x1, r.y1, r.x2, r.y2) for r in rects] if ok else [], attributes)
 
     def plain_text(self, page):
         with self.lock:

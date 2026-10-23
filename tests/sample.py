@@ -96,6 +96,16 @@ def make_sample(path, chapters=6):
         cr.show_text("Back to chapter 1")
         cr.tag_end(cairo.TAG_LINK)
         cr.show_page()
+    # A form page: lines of underscores to write on, as forms made in a word processor have them.
+    surface.set_size(*a4)
+    cr.set_font_size(12)
+    for n, label in enumerate(("Name:", "Date:")):
+        cr.move_to(72, 120 + 30 * n)
+        cr.show_text(f"{label} " + "_" * 40)
+    cr.set_font_size(10)
+    cr.move_to(72, 220)
+    cr.show_text("Not form lines: __init__, a__b and a single _ underscore.")
+    cr.show_page()
     surface.finish()
 
 
