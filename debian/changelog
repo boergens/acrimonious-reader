@@ -1,3 +1,11 @@
+acrimonious-reader (1.2.1) unstable; urgency=medium
+
+  * Text written on a form line sits a little above the line (0.3 of the
+    font size, and 4 pt in from its start) instead of right on it, which
+    looked cramped.
+
+ -- Kevin Boergens <kevin.boergens@gmail.com>  Fri, 23 Oct 2026 19:47:09 +0000
+
 acrimonious-reader (1.2.0) unstable; urgency=medium
 
   * Form lines: runs of underscores get a green marker while the writing

@@ -37,6 +37,11 @@
   </provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="1.2.1" date="2026-10-23">
+      <description>
+        <p>Text written on a form line now sits a little above the line instead of right on it.</p>
+      </description>
+    </release>
     <release version="1.2.0" date="2026-10-23">
       <description>
         <p>Form lines (runs of underscores) get a green marker while the writing toolbar is shown;

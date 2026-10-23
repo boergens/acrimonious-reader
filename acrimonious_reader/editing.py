@@ -25,7 +25,9 @@ INK_GROUP_DISTANCE = 60  # ...if it is also this close to it, in points
 HIT_PIXELS = 4  # how near the pointer must be to an annotation to grab it
 HANDLE_PIXELS = 10  # size of the resize handle on the chosen annotation
 FORM_TEXT_COLOR = (0.0, 0.39, 0.0)  # dark green: writing on form lines stands out from the print
-FORM_LINE_INSET = 2.0  # points between the start of a form line and the text written on it
+FORM_LINE_INSET = 4.0  # points between the start of a form line and the text written on it
+FORM_LINE_LIFT = 0.3  # font sizes the text's baseline sits above the underscores' baseline, so that
+# descenders clear the line and the writing is not cramped against it, as with handwriting
 NIGHT_HUE = ((-0.574, 1.430, 0.144), (0.426, 0.430, 0.144), (0.426, 1.430, -0.856))  # CSS hue-rotate(180°)
 NIGHT_STRENGTH = 0.88
 
@@ -38,6 +40,12 @@ def _rgba(r, g, b, a):
 
 FORM_LINE = _rgba(0.18, 0.63, 0.26, 0.28)
 FORM_LINE_HOVER = _rgba(0.18, 0.63, 0.26, 0.5)
+
+
+def form_line_box(page, line):
+    """An empty text box to type into on a form line, sitting a little above it in its font size."""
+    return TextBox(page, line.x1 + FORM_LINE_INSET, line.y1 - FORM_LINE_LIFT * line.size, "", line.size,
+                   FORM_TEXT_COLOR)
 
 
 def rect(x, y, w, h):
@@ -484,8 +492,7 @@ class AnnotationTools:
         if form_line is not None:
             page, line = form_line
             self._hover_line = None
-            self.start_editing(TextBox(page, line.x1 + FORM_LINE_INSET, line.y1, "", line.size, FORM_TEXT_COLOR),
-                               new=True)
+            self.start_editing(form_line_box(page, line), new=True)
             return True
         if self._tool == "text" and hit is not None:
             page, px, py = hit

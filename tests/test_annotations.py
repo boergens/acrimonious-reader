@@ -176,3 +176,16 @@ def test_files_saved_under_the_old_name_stay_editable(sample_pdf, tmp_path):
     assert item.text == "old" and item.name == "quire-0123"
     pdfwrite.save(str(out), [item.moved(5, 0)], str(out))  # re-saving replaces it, no duplicate
     assert [i.x for i in pdfwrite.read(str(out))] == [95]
+
+
+def test_writing_on_a_form_line_sits_a_little_above_it():
+    from acrimonious_reader.editing import FORM_TEXT_COLOR, form_line_box
+    from acrimonious_reader.selection import FormLine
+
+    line = FormLine(100, 146.2, 400, 157.3, 10.0, 0, 50)
+    box = form_line_box(3, line)
+    assert box.page == 3 and box.text == "" and box.size == 10.0 and box.color == FORM_TEXT_COLOR
+    assert box.x == 104  # a little in from the line's start
+    assert box.y == pytest.approx(146.2 - 3.0)  # 0.3 font sizes above: descenders clear the line
+    x1, y1, x2, y2 = box.bounds()
+    assert y1 < line.y1 < y2 < line.y2  # still overlaps the line, so its marker is hidden
